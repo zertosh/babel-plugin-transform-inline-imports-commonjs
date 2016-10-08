@@ -8,6 +8,10 @@ let buildRequire = template(`
   require($0);
 `);
 
+let buildRequireDecl = template(`
+  var $0 = require($1);
+`);
+
 let buildExportsModuleDeclaration = template(`
   Object.defineProperty(exports, "__esModule", {
     value: true
@@ -174,12 +178,7 @@ module.exports = () => {
             if (cached) return cached;
 
             let ref = path.scope.generateUidIdentifier(basename(source, extname(source)));
-
-            let varDecl = t.variableDeclaration("var", [
-              t.variableDeclarator(ref, buildRequire(
-                t.stringLiteral(source)
-              ).expression)
-            ]);
+            let varDecl = buildRequireDecl(ref, t.stringLiteral(source));
 
             // Copy location from the original import statement for sourcemap
             // generation.
