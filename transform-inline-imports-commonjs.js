@@ -1,8 +1,8 @@
 /* eslint max-len: 0 */
 
-const { basename, extname } = require("path");
-const template = require("babel-template");
-const t = require("babel-types");
+const pathModule = require('path');
+const template = require('babel-template');
+const t = require('babel-types');
 
 let buildRequire = template(`
   require($0);
@@ -47,7 +47,13 @@ let buildExportAll = template(`
   });
 `);
 
-const THIS_BREAK_KEYS = ["FunctionExpression", "FunctionDeclaration", "ClassProperty", "ClassMethod", "ObjectMethod"];
+const THIS_BREAK_KEYS = [
+  'FunctionExpression',
+  'FunctionDeclaration',
+  'ClassProperty',
+  'ClassMethod',
+  'ObjectMethod',
+];
 
 module.exports = () => {
   let REASSIGN_REMAP_SKIP = Symbol();
@@ -73,7 +79,7 @@ module.exports = () => {
       let node = path.node;
       if (node[REASSIGN_REMAP_SKIP]) return;
 
-      let left = path.get("left");
+      let left = path.get('left');
       if (!left.isIdentifier()) return;
 
       let name = left.node.name;
@@ -94,7 +100,7 @@ module.exports = () => {
     },
 
     UpdateExpression(path) {
-      let arg = path.get("argument");
+      let arg = path.get('argument');
       if (!arg.isIdentifier()) return;
 
       let name = arg.node.name;
@@ -104,9 +110,16 @@ module.exports = () => {
       // redeclared in this scope
       if (this.scope.getBinding(name) !== path.scope.getBinding(name)) return;
 
-      let node = t.assignmentExpression(path.node.operator[0] + "=", arg.node, t.numericLiteral(1));
+      let node = t.assignmentExpression(
+        path.node.operator[0] + '=',
+        arg.node,
+        t.numericLiteral(1)
+      );
 
-      if ((path.parentPath.isExpressionStatement() && !path.isCompletionRecord()) || path.node.prefix) {
+      if (
+        (path.parentPath.isExpressionStatement() && !path.isCompletionRecord()) ||
+        path.node.prefix
+      ) {
         path.replaceWith(node);
         this.requeueInParent(path);
         return;
@@ -116,10 +129,10 @@ module.exports = () => {
       nodes.push(node);
 
       let operator;
-      if (path.node.operator === "--") {
-        operator = "+";
-      } else { // "++"
-        operator = "-";
+      if (path.node.operator === '--') {
+        operator = '+';
+      } else { // '++'
+        operator = '-';
       }
       nodes.push(t.binaryExpression(operator, arg.node, t.numericLiteral(1)));
 
@@ -128,7 +141,7 @@ module.exports = () => {
   };
 
   return {
-    inherits: require("babel-plugin-transform-strict-mode"),
+    inherits: require('babel-plugin-transform-strict-mode'),
 
     visitor: {
       ThisExpression(path, state) {
@@ -139,10 +152,10 @@ module.exports = () => {
 
         if (
           state.opts.allowTopLevelThis !== true &&
-          !path.findParent((path) => !path.is("shadow") &&
+          !path.findParent((path) => !path.is('shadow') &&
           THIS_BREAK_KEYS.indexOf(path.type) >= 0)
         ) {
-          path.replaceWith(t.identifier("undefined"));
+          path.replaceWith(t.identifier('undefined'));
         }
       },
 
@@ -152,17 +165,15 @@ module.exports = () => {
 
           let strict = !!this.opts.strict;
 
-          let { scope } = path;
-
           // rename these commonjs variables if they're declared in the file
-          scope.rename("module");
-          scope.rename("exports");
-          scope.rename("require");
+          path.scope.rename('module');
+          path.scope.rename('exports');
+          path.scope.rename('require');
 
           let hasExports = false;
           let hasImports = false;
 
-          let body = path.get("body");
+          let body = path.get('body');
           let imports = Object.create(null);
           let exports = Object.create(null);
 
@@ -177,7 +188,8 @@ module.exports = () => {
             let cached = requires[source];
             if (cached) return cached;
 
-            let ref = path.scope.generateUidIdentifier(basename(source, extname(source)));
+            const filename = pathModule.basename(source, pathModule.extname(source));
+            let ref = path.scope.generateUidIdentifier(filename);
             let varDecl = buildRequireDecl(ref, t.stringLiteral(source));
 
             // Copy location from the original import statement for sourcemap
@@ -186,7 +198,7 @@ module.exports = () => {
               varDecl.loc = imports[source].loc;
             }
 
-            if (typeof blockHoist === "number" && blockHoist > 0) {
+            if (typeof blockHoist === 'number' && blockHoist > 0) {
               varDecl._blockHoist = blockHoist;
             }
 
@@ -204,11 +216,11 @@ module.exports = () => {
             if (path.isExportDeclaration()) {
               hasExports = true;
 
-              let specifiers = [].concat(path.get("declaration"), path.get("specifiers"));
+              let specifiers = [].concat(path.get('declaration'), path.get('specifiers'));
               for (let specifier of specifiers) {
                 let ids = specifier.getBindingIdentifiers();
                 if (ids.__esModule) {
-                  throw specifier.buildCodeFrameError("Illegal export \"__esModule\"");
+                  throw specifier.buildCodeFrameError('Illegal export "__esModule"');
                 }
               }
             }
@@ -225,7 +237,7 @@ module.exports = () => {
 
               importsEntry.specifiers.push(...path.node.specifiers);
 
-              if (typeof path.node._blockHoist === "number") {
+              if (typeof path.node._blockHoist === 'number') {
                 importsEntry.maxBlockHoist = Math.max(
                   path.node._blockHoist,
                   importsEntry.maxBlockHoist
@@ -236,21 +248,23 @@ module.exports = () => {
 
               path.remove();
             } else if (path.isExportDefaultDeclaration()) {
-              let declaration = path.get("declaration");
+              let declaration = path.get('declaration');
               if (declaration.isFunctionDeclaration()) {
                 let id = declaration.node.id;
-                let defNode = t.identifier("default");
+                let defNode = t.identifier('default');
                 if (id) {
                   addTo(exports, id.name, defNode);
                   topNodes.push(buildExportsAssignment(defNode, id));
                   path.replaceWith(declaration.node);
                 } else {
-                  topNodes.push(buildExportsAssignment(defNode, t.toExpression(declaration.node)));
+                  topNodes.push(
+                    buildExportsAssignment(defNode, t.toExpression(declaration.node))
+                  );
                   path.remove();
                 }
               } else if (declaration.isClassDeclaration()) {
                 let id = declaration.node.id;
-                let defNode = t.identifier("default");
+                let defNode = t.identifier('default');
                 if (id) {
                   addTo(exports, id.name, defNode);
                   path.replaceWithMultiple([
@@ -258,23 +272,29 @@ module.exports = () => {
                     buildExportsAssignment(defNode, id)
                   ]);
                 } else {
-                  path.replaceWith(buildExportsAssignment(defNode, t.toExpression(declaration.node)));
+                  path.replaceWith(
+                    buildExportsAssignment(defNode, t.toExpression(declaration.node))
+                  );
 
-                  // Manualy re-queue `export default class {}` expressions so that the ES3 transform
-                  // has an opportunity to convert them. Ideally this would happen automatically from the
+                  // Manualy re-queue `export default class {}` expressions so
+                  // that the ES3 transform has an opportunity to convert them.
+                  // Ideally this would happen automatically from the
                   // replaceWith above. See #4140 for more info.
-                  path.parentPath.requeue(path.get("expression.left"));
+                  path.parentPath.requeue(path.get('expression.left'));
                 }
               } else {
-                path.replaceWith(buildExportsAssignment(t.identifier("default"), declaration.node));
+                path.replaceWith(
+                  buildExportsAssignment(t.identifier('default'), declaration.node)
+                );
 
-                // Manualy re-queue `export default foo;` expressions so that the ES3 transform
-                // has an opportunity to convert them. Ideally this would happen automatically from the
-                // replaceWith above. See #4140 for more info.
-                path.parentPath.requeue(path.get("expression.left"));
+                // Manualy re-queue `export default foo;` expressions so that
+                // the ES3 transform has an opportunity to convert them. Ideally
+                // this would happen automatically from the replaceWith above.
+                // See #4140 for more info.
+                path.parentPath.requeue(path.get('expression.left'));
               }
             } else if (path.isExportNamedDeclaration()) {
-              let declaration = path.get("declaration");
+              let declaration = path.get('declaration');
               if (declaration.node) {
                 if (declaration.isFunctionDeclaration()) {
                   let id = declaration.node.id;
@@ -290,12 +310,12 @@ module.exports = () => {
                   ]);
                   nonHoistedExportNames[id.name] = true;
                 } else if (declaration.isVariableDeclaration()) {
-                  let declarators = declaration.get("declarations");
+                  let declarators = declaration.get('declarations');
                   for (let decl of declarators) {
-                    let id = decl.get("id");
+                    let id = decl.get('id');
 
-                    let init = decl.get("init");
-                    if (!init.node) init.replaceWith(t.identifier("undefined"));
+                    let init = decl.get('init');
+                    if (!init.node) init.replaceWith(t.identifier('undefined'));
 
                     if (id.isIdentifier()) {
                       addTo(exports, id.node.name, id.node);
@@ -310,7 +330,7 @@ module.exports = () => {
                 continue;
               }
 
-              let specifiers = path.get("specifiers");
+              let specifiers = path.get('specifiers');
               let nodes = [];
               let source = path.node.source;
               if (source) {
@@ -322,10 +342,23 @@ module.exports = () => {
                   } else if (specifier.isExportDefaultSpecifier()) {
                     // todo
                   } else if (specifier.isExportSpecifier()) {
-                    if (specifier.node.local.name === "default") {
-                      topNodes.push(buildExportsFrom(t.stringLiteral(specifier.node.exported.name), t.memberExpression(t.callExpression(this.addHelper("interopRequireDefault"), [ref]), specifier.node.local)));
+                    if (specifier.node.local.name === 'default') {
+                      topNodes.push(
+                        buildExportsFrom(
+                          t.stringLiteral(specifier.node.exported.name),
+                          t.memberExpression(
+                            t.callExpression(this.addHelper('interopRequireDefault'), [ref]),
+                            specifier.node.local
+                          )
+                        )
+                      );
                     } else {
-                      topNodes.push(buildExportsFrom(t.stringLiteral(specifier.node.exported.name), t.memberExpression(ref, specifier.node.local)));
+                      topNodes.push(
+                        buildExportsFrom(
+                          t.stringLiteral(specifier.node.exported.name),
+                          t.memberExpression(ref, specifier.node.local)
+                        )
+                      );
                     }
                     nonHoistedExportNames[specifier.node.exported.name] = true;
                   }
@@ -335,7 +368,12 @@ module.exports = () => {
                   if (specifier.isExportSpecifier()) {
                     addTo(exports, specifier.node.local.name, specifier.node.exported);
                     nonHoistedExportNames[specifier.node.exported.name] = true;
-                    nodes.push(buildExportsAssignment(specifier.node.exported, specifier.node.local));
+                    nodes.push(
+                      buildExportsAssignment(
+                        specifier.node.exported,
+                        specifier.node.local
+                      )
+                    );
                   }
                 }
               }
@@ -363,11 +401,11 @@ module.exports = () => {
                   if (strict) {
                     remaps[specifier.local.name] = uid;
                   } else {
-                    const varDecl = t.variableDeclaration("var", [
+                    const varDecl = t.variableDeclaration('var', [
                       t.variableDeclarator(
                         specifier.local,
                         t.callExpression(
-                          this.addHelper("interopRequireWildcard"),
+                          this.addHelper('interopRequireWildcard'),
                           [uid]
                         )
                       )
@@ -381,23 +419,23 @@ module.exports = () => {
                   }
                   wildcard = specifier.local;
                 } else if (t.isImportDefaultSpecifier(specifier)) {
-                  specifiers[i] = t.importSpecifier(specifier.local, t.identifier("default"));
+                  specifiers[i] = t.importSpecifier(specifier.local, t.identifier('default'));
                 }
               }
 
               for (let specifier of specifiers) {
                 if (t.isImportSpecifier(specifier)) {
                   let target = uid;
-                  if (specifier.imported.name === "default") {
+                  if (specifier.imported.name === 'default') {
                     if (wildcard) {
                       target = wildcard;
                     } else {
                       target = wildcard = path.scope.generateUidIdentifier(uid.name);
-                      const varDecl = t.variableDeclaration("var", [
+                      const varDecl = t.variableDeclaration('var', [
                         t.variableDeclarator(
                           target,
                           t.callExpression(
-                            this.addHelper("interopRequireDefault"),
+                            this.addHelper('interopRequireDefault'),
                             [uid]
                           )
                         )
@@ -410,7 +448,10 @@ module.exports = () => {
                       topNodes.push(varDecl);
                     }
                   }
-                  remaps[specifier.local.name] = t.memberExpression(target, t.cloneWithoutLoc(specifier.imported));
+                  remaps[specifier.local.name] = t.memberExpression(
+                    target,
+                    t.cloneWithoutLoc(specifier.imported)
+                  );
                 }
               }
             } else {
@@ -422,10 +463,13 @@ module.exports = () => {
           }
 
           if (hasImports && Object.keys(nonHoistedExportNames).length) {
-            let hoistedExportsNode = t.identifier("undefined");
+            let hoistedExportsNode = t.identifier('undefined');
 
             for (let name in nonHoistedExportNames) {
-              hoistedExportsNode = buildExportsAssignment(t.identifier(name), hoistedExportsNode).expression;
+              hoistedExportsNode = buildExportsAssignment(
+                t.identifier(name),
+                hoistedExportsNode
+              ).expression;
             }
 
             const node = t.expressionStatement(hoistedExportsNode);
@@ -445,10 +489,10 @@ module.exports = () => {
             topNodes.unshift(declar);
           }
 
-          path.unshiftContainer("body", topNodes);
+          path.unshiftContainer('body', topNodes);
           path.traverse(reassignmentVisitor, {
             remaps,
-            scope,
+            scope: path.scope,
             exports,
             requeueInParent: (newPath) => path.requeue(newPath),
           });
