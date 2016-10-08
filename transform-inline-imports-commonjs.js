@@ -1,51 +1,6 @@
-/* eslint max-len: 0 */
+'use strict';
 
 const pathModule = require('path');
-const template = require('babel-template');
-const t = require('babel-types');
-
-let buildRequire = template(`
-  require($0);
-`);
-
-let buildRequireDecl = template(`
-  var $0 = require($1);
-`);
-
-let buildExportsModuleDeclaration = template(`
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-`);
-
-let buildExportsFrom = template(`
-  Object.defineProperty(exports, $0, {
-    enumerable: true,
-    get: function () {
-      return $1;
-    }
-  });
-`);
-
-let buildLooseExportsModuleDeclaration = template(`
-  exports.__esModule = true;
-`);
-
-let buildExportsAssignment = template(`
-  exports.$0 = $1;
-`);
-
-let buildExportAll = template(`
-  Object.keys(OBJECT).forEach(function (key) {
-    if (key === "default" || key === "__esModule") return;
-    Object.defineProperty(exports, key, {
-      enumerable: true,
-      get: function () {
-        return OBJECT[key];
-      }
-    });
-  });
-`);
 
 const THIS_BREAK_KEYS = [
   'FunctionExpression',
@@ -55,7 +10,53 @@ const THIS_BREAK_KEYS = [
   'ObjectMethod',
 ];
 
-module.exports = () => {
+module.exports = context => {
+  const template = context.template;
+  const t = context.types;
+
+  let buildRequire = template(`
+    require($0);
+  `);
+
+  let buildRequireDecl = template(`
+    var $0 = require($1);
+  `);
+
+  let buildExportsModuleDeclaration = template(`
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+  `);
+
+  let buildExportsFrom = template(`
+    Object.defineProperty(exports, $0, {
+      enumerable: true,
+      get: function () {
+        return $1;
+      }
+    });
+  `);
+
+  let buildLooseExportsModuleDeclaration = template(`
+    exports.__esModule = true;
+  `);
+
+  let buildExportsAssignment = template(`
+    exports.$0 = $1;
+  `);
+
+  let buildExportAll = template(`
+    Object.keys(OBJECT).forEach(function (key) {
+      if (key === "default" || key === "__esModule") return;
+      Object.defineProperty(exports, key, {
+        enumerable: true,
+        get: function () {
+          return OBJECT[key];
+        }
+      });
+    });
+  `);
+
   let REASSIGN_REMAP_SKIP = Symbol();
 
   let reassignmentVisitor = {
