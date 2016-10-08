@@ -5,6 +5,9 @@
   "repository": "https://github.com/babel/babel/tree/master/packages/babel-plugin-transform-es2015-modules-commonjs",
   "license": "MIT",
   "main": "transform-inline-imports-commonjs.js",
+  "scripts": {
+    "test": "tap test/*-test.js"
+  },
   "dependencies": {
     "babel-plugin-transform-strict-mode": "^6.8.0",
     "babel-runtime": "^6.0.0",
@@ -15,6 +18,17 @@
     "babel-plugin"
   ],
   "devDependencies": {
+    "babel-core": "^6.17.0",
+    "babel-plugin-external-helpers": "^6.8.0",
+    "babel-plugin-transform-es2015-arrow-functions": "^6.8.0",
+    "babel-plugin-transform-es2015-block-scoping": "^6.15.0",
+    "babel-plugin-transform-es2015-destructuring": "^6.16.0",
+    "babel-plugin-transform-es2015-function-name": "^6.9.0",
+    "babel-plugin-transform-es2015-parameters": "^6.17.0",
+    "babel-plugin-transform-es2015-template-literals": "^6.8.0",
+    "babel-plugin-transform-es3-member-expression-literals": "^6.8.0",
+    "babel-plugin-transform-es3-property-literals": "^6.8.0",
+    "babel-plugin-transform-runtime": "^6.15.0",
     "glob": "^7.1.1",
     "tap": "^7.1.2"
   }
