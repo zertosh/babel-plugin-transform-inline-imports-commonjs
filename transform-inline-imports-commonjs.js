@@ -1,8 +1,8 @@
 /* eslint max-len: 0 */
 
-import { basename, extname } from "path";
-import template from "babel-template";
-import * as t from "babel-types";
+const { basename, extname } = require("path");
+const template = require("babel-template");
+const t = require("babel-types");
 
 let buildRequire = template(`
   require($0);
@@ -45,7 +45,7 @@ let buildExportAll = template(`
 
 const THIS_BREAK_KEYS = ["FunctionExpression", "FunctionDeclaration", "ClassProperty", "ClassMethod", "ObjectMethod"];
 
-export default function () {
+module.exports = () => {
   let REASSIGN_REMAP_SKIP = Symbol();
 
   let reassignmentVisitor = {
@@ -158,7 +158,7 @@ export default function () {
           let hasExports = false;
           let hasImports = false;
 
-          let body: Array<Object> = path.get("body");
+          let body = path.get("body");
           let imports = Object.create(null);
           let exports = Object.create(null);
 
