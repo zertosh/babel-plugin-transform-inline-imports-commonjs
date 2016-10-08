@@ -6,15 +6,16 @@
   "license": "MIT",
   "main": "transform-inline-imports-commonjs.js",
   "dependencies": {
-    "babel-types": "^6.16.0",
+    "babel-plugin-transform-strict-mode": "^6.8.0",
     "babel-runtime": "^6.0.0",
     "babel-template": "^6.16.0",
-    "babel-plugin-transform-strict-mode": "^6.8.0"
+    "babel-types": "^6.16.0"
   },
   "keywords": [
     "babel-plugin"
   ],
   "devDependencies": {
-    "babel-helper-plugin-test-runner": "^6.8.0"
+    "glob": "^7.1.1",
+    "tap": "^7.1.2"
   }
 }
