@@ -22,6 +22,17 @@ module.exports = context => {
     var $0 = require($1);
   `);
 
+  let buildLazyImports = template(`
+    Object.defineProperty($0, $1, {
+      configurable: true,
+      get: function () {
+        return Object.defineProperty($0, $1, {
+          value: $3
+        }).$2;
+      }
+    });
+  `);
+
   let buildExportsModuleDeclaration = template(`
     Object.defineProperty(exports, "__esModule", {
       value: true
@@ -184,14 +195,37 @@ module.exports = context => {
           let remaps = Object.create(null);
 
           let requires = Object.create(null);
+          let lazyImportsIdent;
+          let lazyImportsDecl;
 
-          function addRequire(source, blockHoist) {
-            let cached = requires[source];
+          const addRequire = (source, blockHoist, interop) => {
+            const cacheKey = JSON.stringify({source, interop});
+
+            let cached = requires[cacheKey];
             if (cached) return cached;
+
+            if (!lazyImportsIdent) {
+              lazyImportsIdent = path.scope.generateUidIdentifier('_imports');
+              lazyImportsDecl = t.variableDeclaration('var', [
+                t.variableDeclarator(lazyImportsIdent, t.objectExpression([]))
+              ]);
+              topNodes.push(lazyImportsDecl);
+            }
 
             const filename = pathModule.basename(source, pathModule.extname(source));
             let ref = path.scope.generateUidIdentifier(filename);
-            let varDecl = buildRequireDecl(ref, t.stringLiteral(source));
+            let ref2 = t.memberExpression(lazyImportsIdent, ref);
+
+            let requireCall = buildRequire(t.stringLiteral(source));
+
+            let varDecl = buildLazyImports(
+              lazyImportsIdent,
+              t.stringLiteral(ref.name),
+              ref,
+              interop
+                ? t.callExpression(this.addHelper(interop), [requireCall.expression])
+                : requireCall
+            );
 
             // Copy location from the original import statement for sourcemap
             // generation.
@@ -201,11 +235,15 @@ module.exports = context => {
 
             if (typeof blockHoist === 'number' && blockHoist > 0) {
               varDecl._blockHoist = blockHoist;
+              lazyImportsDecl._blockHoist = Math.max(
+                lazyImportsDecl._blockHoist || 0,
+                blockHoist
+              );
             }
 
             topNodes.push(varDecl);
 
-            return requires[source] = ref;
+            return requires[cacheKey] = ref2;
           }
 
           function addTo(obj, key, arr) {
@@ -392,7 +430,7 @@ module.exports = context => {
           for (let source in imports) {
             let {specifiers, maxBlockHoist} = imports[source];
             if (specifiers.length) {
-              let uid = addRequire(source, maxBlockHoist);
+              let uid;
 
               let wildcard;
 
@@ -400,25 +438,13 @@ module.exports = context => {
                 let specifier = specifiers[i];
                 if (t.isImportNamespaceSpecifier(specifier)) {
                   if (strict) {
+                    if (!uid) uid = addRequire(source, maxBlockHoist);
                     remaps[specifier.local.name] = uid;
                   } else {
-                    const varDecl = t.variableDeclaration('var', [
-                      t.variableDeclarator(
-                        specifier.local,
-                        t.callExpression(
-                          this.addHelper('interopRequireWildcard'),
-                          [uid]
-                        )
-                      )
-                    ]);
-
-                    if (maxBlockHoist > 0) {
-                      varDecl._blockHoist = maxBlockHoist;
-                    }
-
-                    topNodes.push(varDecl);
+                    if (!uid) uid = addRequire(source, maxBlockHoist, 'interopRequireWildcard');
+                    remaps[specifier.local.name] = uid;
                   }
-                  wildcard = specifier.local;
+                  wildcard = uid;
                 } else if (t.isImportDefaultSpecifier(specifier)) {
                   specifiers[i] = t.importSpecifier(specifier.local, t.identifier('default'));
                 }
@@ -426,29 +452,16 @@ module.exports = context => {
 
               for (let specifier of specifiers) {
                 if (t.isImportSpecifier(specifier)) {
-                  let target = uid;
+                  let target;
                   if (specifier.imported.name === 'default') {
                     if (wildcard) {
                       target = wildcard;
                     } else {
-                      target = wildcard = path.scope.generateUidIdentifier(uid.name);
-                      const varDecl = t.variableDeclaration('var', [
-                        t.variableDeclarator(
-                          target,
-                          t.callExpression(
-                            this.addHelper('interopRequireDefault'),
-                            [uid]
-                          )
-                        )
-                      ]);
-
-                      if (maxBlockHoist > 0) {
-                        varDecl._blockHoist = maxBlockHoist;
-                      }
-
-                      topNodes.push(varDecl);
+                      if (!uid) uid = addRequire(source, maxBlockHoist, 'interopRequireDefault');
+                      target = wildcard = uid;
                     }
                   }
+                  if (!target) target = addRequire(source, maxBlockHoist);
                   remaps[specifier.local.name] = t.memberExpression(
                     target,
                     t.cloneWithoutLoc(specifier.imported)
