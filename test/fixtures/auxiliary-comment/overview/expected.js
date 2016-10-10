@@ -11,23 +11,35 @@ exports.test2 = exports.test = undefined;
 
 /*before*/require("./directory/foo-bar") /*after*/;
 
-var /*before*/_foo = require("foo2") /*after*/;
+/*before*/var _foo;
 
-/*before*/var _foo2 = babelHelpers.interopRequireDefault(_foo);
+/*after*/function /*before*/_load_foo /*after*/() /*before*/{
+  return _foo = babelHelpers.interopRequireDefault(require("foo2"));
+}
 
-/*after*/var /*before*/_foo3 = require("foo3") /*after*/;
+var _foo2;
 
-/*before*/var /*after*/foo2 = babelHelpers.interopRequireWildcard(_foo3);
+/*after*/function /*before*/_load_foo2 /*after*/() /*before*/{
+  return _foo2 = babelHelpers.interopRequireWildcard(require("foo3"));
+}
 
-var /*before*/_foo4 = require("foo4") /*after*/;
+var _foo3;
 
-var /*before*/_foo5 = require("foo5") /*after*/;
+/*after*/function /*before*/_load_foo3 /*after*/() /*before*/{
+  return _foo3 = require("foo4");
+}
 
-/*before*/exports. /*after*/test = test;
+var _foo4;
+
+/*after*/function /*before*/_load_foo4 /*after*/() /*before*/{
+  return _foo4 = require("foo5");
+}
+
+exports. /*after*/test = test;
 var test2 = /*before*/exports. /*after*/test2 = 5;
 
-/*before*/(0, _foo4.bar) /*after*/( /*before*/_foo2.default /*after*/, /*before*/_foo5.foo /*after*/);
+/*before*/(0, (_foo3 || _load_foo3()).bar) /*after*/( /*before*/(_foo || _load_foo()).default /*after*/, /*before*/(_foo4 || _load_foo4()).foo /*after*/);
 
 /* my comment */
-/*before*/_foo5.foo /*after*/;
-/*before*/_foo2.default /*after*/;
+/*before*/(_foo4 || _load_foo4()).foo /*after*/;
+/*before*/(_foo || _load_foo()).default /*after*/;

@@ -1,3 +1,7 @@
 'use strict';
 
-var _foo = require('foo');
+var _foo;
+
+function _load_foo() {
+  return _foo = require('foo');
+}

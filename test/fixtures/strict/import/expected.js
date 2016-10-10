@@ -1,8 +1,12 @@
 "use strict";
 
-var _foo = require("foo");
+var _foo;
 
-_foo.default;
-_foo.default;
-_foo.foo3;
-(0, _foo.foo3)();
+function _load_foo() {
+  return _foo = require("foo");
+}
+
+(_foo || _load_foo()).default;
+(_foo || _load_foo()).default;
+(_foo || _load_foo()).foo3;
+(0, (_foo || _load_foo()).foo3)();

@@ -1,10 +1,14 @@
 "use strict";
 
-var _foo = require("foo");
+var _foo;
 
-_foo.bar;
-_foo.bar2;
-_foo.baz;
-_foo.bar;
-_foo.bar;
-_foo.xyz;
+function _load_foo() {
+  return _foo = require("foo");
+}
+
+(_foo || _load_foo()).bar;
+(_foo || _load_foo()).bar2;
+(_foo || _load_foo()).baz;
+(_foo || _load_foo()).bar;
+(_foo || _load_foo()).bar;
+(_foo || _load_foo()).xyz;
