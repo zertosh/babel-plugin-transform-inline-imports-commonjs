@@ -3,6 +3,6 @@
     "transform-es2015-arrow-functions",
     "transform-es2015-block-scoping",
     "transform-es2015-function-name",
-    "transform-es2015-modules-commonjs"
+    "transform-inline-imports-commonjs"
   ]
 }

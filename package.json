@@ -1,8 +1,8 @@
 {
-  "name": "babel-plugin-transform-es2015-modules-commonjs",
+  "name": "babel-plugin-transform-inline-imports-commonjs",
   "version": "6.16.0",
   "description": "",
-  "repository": "https://github.com/babel/babel/tree/master/packages/babel-plugin-transform-es2015-modules-commonjs",
+  "repository": "https://github.com/babel/babel/tree/master/packages/babel-plugin-transform-inline-imports-commonjs",
   "license": "MIT",
   "main": "transform-inline-imports-commonjs.js",
   "scripts": {

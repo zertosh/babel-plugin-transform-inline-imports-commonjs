@@ -17,7 +17,7 @@ for (const actualPath of testPaths) {
 
     const actualText = fs.readFileSync(actualPath, 'utf8');
     const optsContents = fs.readFileSync(optsPath, 'utf8')
-      .replace('"transform-es2015-modules-commonjs"', `"${thisPluginPath}"`);
+      .replace('"transform-inline-imports-commonjs"', `"${thisPluginPath}"`);
 
     const opts = JSON.parse(optsContents);
 
