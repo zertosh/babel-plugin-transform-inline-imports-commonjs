@@ -1,0 +1,6 @@
+{
+  "plugins": [
+    "transform-decorators-legacy",
+    "transform-inline-imports-commonjs"
+  ]
+}

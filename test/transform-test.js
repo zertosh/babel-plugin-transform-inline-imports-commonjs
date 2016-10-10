@@ -24,6 +24,7 @@ for (const actualPath of testPaths) {
     if (fs.existsSync(expectedPath)) {
       const expectedText = fs.readFileSync(expectedPath, 'utf8').trim();
       const code = babel.transform(actualText, opts).code;
+      // if (code !== expectedText) fs.writeFileSync(expectedPath, code);
       t.equal(code, expectedText);
     } else if (fs.existsSync(throwsPath)) {
       const throwsText = fs.readFileSync(throwsPath, 'utf8').trim();

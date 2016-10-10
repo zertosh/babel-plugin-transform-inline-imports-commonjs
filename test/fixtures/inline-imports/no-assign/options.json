@@ -1,0 +1,6 @@
+{
+  "plugins": [
+    "check-es2015-constants",
+    "transform-inline-imports-commonjs"
+  ]
+}
