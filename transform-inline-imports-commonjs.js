@@ -260,7 +260,10 @@ module.exports = context => {
                 loc: path.node.loc,
               };
 
-              importsEntry.specifiers.push(...path.node.specifiers);
+              Array.prototype.push.apply(
+                importsEntry.specifiers,
+                path.node.specifiers
+              );
 
               if (typeof path.node._blockHoist === 'number') {
                 importsEntry.maxBlockHoist = Math.max(
@@ -414,7 +417,9 @@ module.exports = context => {
           }
 
           for (let source in imports) {
-            let {specifiers, maxBlockHoist} = imports[source];
+            let specifiers = imports[source].specifiers;
+            let maxBlockHoist = imports[source].maxBlockHoist;
+
             if (specifiers.length) {
               let uid;
 
