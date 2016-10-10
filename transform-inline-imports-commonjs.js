@@ -18,21 +18,6 @@ module.exports = context => {
     require($0);
   `);
 
-  let buildRequireDecl = template(`
-    var $0 = require($1);
-  `);
-
-  let buildLazyImports = template(`
-    Object.defineProperty($0, $1, {
-      configurable: true,
-      get: function () {
-        return Object.defineProperty($0, $1, {
-          value: $3
-        }).$2;
-      }
-    });
-  `);
-
   let buildExportsModuleDeclaration = template(`
     Object.defineProperty(exports, "__esModule", {
       value: true
@@ -195,8 +180,6 @@ module.exports = context => {
           let remaps = Object.create(null);
 
           let requires = Object.create(null);
-          let lazyImportsIdent;
-          let lazyImportsDecl;
 
           const addRequire = (source, blockHoist, interop) => {
             const cacheKey = JSON.stringify({source, interop});
@@ -204,46 +187,47 @@ module.exports = context => {
             let cached = requires[cacheKey];
             if (cached) return cached;
 
-            if (!lazyImportsIdent) {
-              lazyImportsIdent = path.scope.generateUidIdentifier('_imports');
-              lazyImportsDecl = t.variableDeclaration('var', [
-                t.variableDeclarator(lazyImportsIdent, t.objectExpression([]))
-              ]);
-              topNodes.push(lazyImportsDecl);
-            }
-
             const filename = pathModule.basename(source, pathModule.extname(source));
-            let ref = path.scope.generateUidIdentifier(filename);
-            let ref2 = t.memberExpression(lazyImportsIdent, ref);
 
-            let requireCall = buildRequire(t.stringLiteral(source));
+            const memoizedID = path.scope.generateUidIdentifier(filename);
+            const memoizedFunction = path.scope.generateUidIdentifier(filename);
 
-            let varDecl = buildLazyImports(
-              lazyImportsIdent,
-              t.stringLiteral(ref.name),
-              ref,
-              interop
-                ? t.callExpression(this.addHelper(interop), [requireCall.expression])
-                : requireCall
-            );
+            // require(moduleID);
+            const requireCallExpression = buildRequire(t.stringLiteral(source)).expression;
+
+            // $INTEROP(require(moduleID));
+            const wrappedRequireCall = interop
+              ? t.callExpression(this.addHelper(interop), [requireCallExpression])
+              : requireCallExpression;
+
+            // var memoizedID;
+            const memoizerVarDecl =
+              t.variableDeclaration('var', [t.variableDeclarator(memoizedID)]);
+
+            // function memoizedFunction() { return memoizedID = expression; }
+            const memoizerFuncDecl =
+              t.functionDeclaration(memoizedFunction, [], t.blockStatement([
+                t.returnStatement(t.assignmentExpression('=', memoizedID, wrappedRequireCall)),
+              ]));
+
+            // memoizedID || memoizedFunction();
+            const memoizedRef =
+              t.logicalExpression('||', memoizedID, t.callExpression(memoizedFunction, []));
 
             // Copy location from the original import statement for sourcemap
             // generation.
             if (imports[source]) {
-              varDecl.loc = imports[source].loc;
+              memoizerFuncDecl.loc = imports[source].loc;
             }
 
             if (typeof blockHoist === 'number' && blockHoist > 0) {
-              varDecl._blockHoist = blockHoist;
-              lazyImportsDecl._blockHoist = Math.max(
-                lazyImportsDecl._blockHoist || 0,
-                blockHoist
-              );
+              memoizerVarDecl._blockHoist = blockHoist;
+              memoizerFuncDecl._blockHoist = blockHoist;
             }
 
-            topNodes.push(varDecl);
+            topNodes.push(memoizerVarDecl, memoizerFuncDecl);
 
-            return requires[cacheKey] = ref2;
+            return requires[cacheKey] = memoizedRef;
           }
 
           function addTo(obj, key, arr) {
