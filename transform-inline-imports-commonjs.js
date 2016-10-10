@@ -189,8 +189,10 @@ module.exports = context => {
 
             const filename = pathModule.basename(source, pathModule.extname(source));
 
-            const memoizedID = path.scope.generateUidIdentifier(filename);
-            const memoizedFunction = path.scope.generateUidIdentifier(filename);
+            const memoizedID =
+              path.scope.generateUidIdentifier(filename);
+            const memoizedFunction =
+              path.scope.generateUidIdentifier('load' + memoizedID.name);
 
             // require(moduleID);
             const requireCallExpression = buildRequire(t.stringLiteral(source)).expression;
