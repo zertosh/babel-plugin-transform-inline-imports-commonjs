@@ -1,19 +1,24 @@
 {
   "name": "babel-plugin-transform-inline-imports-commonjs",
-  "version": "6.16.0",
-  "description": "",
-  "repository": "https://github.com/babel/babel/tree/master/packages/babel-plugin-transform-inline-imports-commonjs",
+  "version": "0.0.0",
+  "description": "A Babel transform that turns imports into lazily loaded commonjs requires",
+  "keywords": [
+    "babel-plugin",
+    "commonjs"
+  ],
   "license": "MIT",
+  "author": "Andres Suarez <zertosh@gmail.com>",
+  "files": [
+    "transform-inline-imports-commonjs.js"
+  ],
   "main": "transform-inline-imports-commonjs.js",
+  "repository": "https://github.com/zertosh/babel-plugin-transform-inline-imports-commonjs",
   "scripts": {
     "test": "tap test/*-test.js"
   },
   "dependencies": {
     "babel-plugin-transform-strict-mode": "^6.8.0"
   },
-  "keywords": [
-    "babel-plugin"
-  ],
   "devDependencies": {
     "babel-core": "^6.17.0",
     "babel-plugin-external-helpers": "^6.8.0",
