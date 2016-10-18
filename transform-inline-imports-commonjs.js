@@ -1,6 +1,7 @@
 'use strict';
 
 const pathModule = require('path');
+const builtinModules = new Set(require('builtin-modules/static'));
 
 const THIS_BREAK_KEYS = [
   'FunctionExpression',
@@ -187,13 +188,6 @@ module.exports = context => {
             let cached = requires[cacheKey];
             if (cached) return cached;
 
-            const filename = pathModule.basename(source, pathModule.extname(source));
-
-            const memoizedID =
-              path.scope.generateUidIdentifier(filename);
-            const memoizedFunction =
-              path.scope.generateUidIdentifier('load' + memoizedID.name);
-
             // require(moduleID);
             const requireCallExpression = buildRequire(t.stringLiteral(source)).expression;
 
@@ -201,6 +195,30 @@ module.exports = context => {
             const wrappedRequireCall = interop
               ? t.callExpression(this.addHelper(interop), [requireCallExpression])
               : requireCallExpression;
+
+            if (this.opts.excludeNodeBuiltins && builtinModules.has(source)) {
+              // var memoizedID;
+              const declID = path.scope.generateUidIdentifier(source);
+              const varDecl = t.variableDeclaration('var', [
+                t.variableDeclarator(declID, wrappedRequireCall)
+              ]);
+              // Copy location from the original import statement for sourcemap
+              // generation.
+              if (imports[source]) {
+                varDecl.loc = imports[source].loc;
+              }
+              if (typeof blockHoist === 'number' && blockHoist > 0) {
+                varDecl._blockHoist = blockHoist;
+              }
+              topNodes.push(varDecl);
+              return requires[cacheKey] = declID;
+            }
+
+            const filename = pathModule.basename(source, pathModule.extname(source));
+            const memoizedID =
+              path.scope.generateUidIdentifier(filename);
+            const memoizedFunction =
+              path.scope.generateUidIdentifier('load' + memoizedID.name);
 
             // var memoizedID;
             const memoizerVarDecl =

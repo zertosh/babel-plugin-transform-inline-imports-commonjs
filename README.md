@@ -71,3 +71,13 @@ The same settings that are available for [`babel-plugin-transform-es2015-modules
   ]
 }
 ```
+
+#### Additional settings
+
+* `excludeNodeBuiltins` (default: `false`)
+  - Do not apply "inline-imports" to[Node builtin modules](https://github.com/sindresorhus/builtin-modules/blob/v1.1.1/builtin-modules.json). These modules are usually already in the module cache, so there may be no need to lazily load them.
+
+  ```js
+  import * as path from 'path'; // transforms to plain `require` with interop
+  import foo from 'bar'; // transforms to inline import
+  ```
