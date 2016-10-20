@@ -1,0 +1,5 @@
+{
+  "plugins": [
+    ["transform-inline-imports-commonjs", {"excludeModules": ["atom"]}]
+  ]
+}

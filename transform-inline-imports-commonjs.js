@@ -182,6 +182,13 @@ module.exports = context => {
 
           let requires = Object.create(null);
 
+          const excludeNodeBuiltins = this.opts.excludeNodeBuiltins
+            ? builtinModules
+            : null;
+          const excludeModules = Array.isArray(this.opts.excludeModules)
+            ? new Set(this.opts.excludeModules)
+            : null;
+
           const addRequire = (source, blockHoist, interop) => {
             const cacheKey = JSON.stringify({source, interop});
 
@@ -196,7 +203,10 @@ module.exports = context => {
               ? t.callExpression(this.addHelper(interop), [requireCallExpression])
               : requireCallExpression;
 
-            if (this.opts.excludeNodeBuiltins && builtinModules.has(source)) {
+            if (
+              (excludeNodeBuiltins && excludeNodeBuiltins.has(source)) ||
+              (excludeModules && excludeModules.has(source))
+            ) {
               // var memoizedID;
               const declID = path.scope.generateUidIdentifier(source);
               const varDecl = t.variableDeclaration('var', [
